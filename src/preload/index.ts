@@ -1,0 +1,74 @@
+import { ipcMain, ipcRenderer } from 'electron'
+import type { APIRecord, APISchema, RecursiveAPI, RecursiveListener } from '../types'
+import { logStatus } from '../common/utils'
+
+class APIManager {
+  private handlers: APIRecord<APISchema> = {}
+  private listeners: APIRecord<APISchema> = {}
+
+  /**
+   * ハンドラを登録する
+   * @param key ハンドラのキー
+   * @param handler ハンドラ関数
+   */
+  registerHandler<T extends APISchema>(key: string, handler: (...args: unknown[]) => Promise<T>): void {
+    this.handlers[key] = handler
+    ipcMain.handle(`invoke-api:${key}`, async (event, ...args) => {
+      try {
+        return await handler(event.sender, ...args)
+      } catch (err) {
+        return logStatus({ code: 500, message: 'API の呼び出しに失敗しました' }, null, err)
+      }
+    })
+  }
+
+  /**
+   * リスナーを登録する
+   * @param key リスナーのキー
+   * @param listener リスナー関数
+   */
+  registerListener<T extends APISchema>(key: string, listener: (...args: unknown[]) => Promise<T>): void {
+    this.listeners[key] = listener
+    ipcMain.on(`on-api:${key}`, (_event, ...args) => {
+      try {
+        listener(...args)
+      } catch (err) {
+        console.error(`[ERROR] IPC Listener error: ${key}`, err)
+      }
+    })
+  }
+
+  /**
+   * API のインボーカを作成する
+   * @returns API のインボーカ
+   */
+  createAPIInvoker<T>(): RecursiveAPI<T> {
+    const apiRenderer: { [key: string]: RecursiveAPI<T> | ((...args: unknown[]) => void) } = {}
+
+    for (const key in this.handlers) {
+      apiRenderer[key] = async (...args: unknown[]): Promise<APISchema> => {
+        return ipcRenderer.invoke(`invoke-api:${key}`, ...args)
+      }
+    }
+
+    return apiRenderer as RecursiveAPI<T>
+  }
+
+  /**
+   * API のエミッターを作成する
+   * @returns API のエミッター
+   */
+  createAPIEmitter<T>(): RecursiveListener<T> {
+    const apiEmitter: { [key: string]: RecursiveListener<T> | ((...args: unknown[]) => void) } = {}
+
+    for (const key in this.listeners) {
+      apiEmitter[key] = (...args: unknown[]): void => {
+        ipcRenderer.send(`on-api:${key}`, ...args)
+      }
+    }
+
+    return apiEmitter as RecursiveListener<T>
+  }
+}
+
+export const apiManager = new APIManager()
