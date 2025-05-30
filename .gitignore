@@ -10,6 +10,12 @@ dist
 coverage
 *.lcov
 
+# lock files
+package-lock.json
+yarn.lock
+pn.lock
+bun.lock
+
 # logs
 logs
 _.log

@@ -1,6 +1,6 @@
 import { ipcMain, ipcRenderer } from 'electron'
 import type { APIRecord, APISchema, RecursiveAPI, RecursiveListener } from '../types'
-import { logStatus } from '../common/utils'
+import { logStatus } from '@shiki-01/logstatus'
 
 class APIManager {
   private handlers: APIRecord<APISchema> = {}

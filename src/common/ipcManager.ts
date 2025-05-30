@@ -1,6 +1,5 @@
 import { ipcRenderer } from 'electron'
-import { v4 as uuid } from 'uuid'
-import { logStatus } from './utils'
+import { logStatus } from '@shiki-01/logstatus'
 
 type Listener<T = unknown> = (...args: T[]) => void
 

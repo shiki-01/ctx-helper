@@ -1,0 +1,15 @@
+src/
+tests/
+test/
+*.test.ts
+*.spec.ts
+*.log
+*.md
+bun.lockb
+jest.config.*
+tsconfig.json
+.vscode/
+.git/
+.github/
+node_modules/
+coverage/
