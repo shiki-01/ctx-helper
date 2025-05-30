@@ -1,6 +1,6 @@
 {
   "name": "ctx-helper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A helper library for managing Electron context isolation and IPC communication.",
   "module": "index.ts",
   "type": "module",
@@ -10,7 +10,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://shiki-01.com/ctx-helper.git"
+    "url": "https:/github.com/shiki-01/ctx-helper.git"
   },
   "author": {
     "name": "shiki-01",
