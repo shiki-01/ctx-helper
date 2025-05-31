@@ -2,7 +2,7 @@ import { APISchema, logStatus } from "@shiki-01/logstatus";
 import { ipcMain } from "electron";
 import { APIRecord } from "../types";
 
-class MainAPIManager {
+export const mainAPIManager =  {
     /**
    * ハンドラを登録する
    * @param key ハンドラのキー
@@ -23,7 +23,7 @@ class MainAPIManager {
         );
       }
     });
-  }
+  },
 
   /**
    * API のハンドラを一括登録する
@@ -61,7 +61,7 @@ class MainAPIManager {
     };
 
     registerRecursive(apiObj, parentKey);
-  }
+  },
 
   /**
    * リスナーを登録する
@@ -79,7 +79,7 @@ class MainAPIManager {
         console.error(`[ERROR] IPC Listener error: ${key}`, err);
       }
     });
-  }
+  },
 
   /**
    * API のリスナーを一括登録する
@@ -117,5 +117,3 @@ class MainAPIManager {
     registerRecursive(apiObj, parentKey);
   }
 }
-
-export const mainAPIManager = new MainAPIManager();

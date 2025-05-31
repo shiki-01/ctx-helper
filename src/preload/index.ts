@@ -6,7 +6,7 @@ import type {
   RecursiveListener,
 } from "../types/index.js";
 
-class RendererAPIManager {
+export const rendererAPIManager =  {
   /**
    * API のインボーカを作成する
    * @param apiObj API のハンドラ群
@@ -41,7 +41,7 @@ class RendererAPIManager {
     };
 
     return createRecursive(apiObj, parentKey);
-  }
+  },
 
   /**
    * API のエミッターを作成する
@@ -76,5 +76,3 @@ class RendererAPIManager {
     return createRecursive(apiObj, parentKey);
   }
 }
-
-export const rendererAPIManager = new RendererAPIManager();
