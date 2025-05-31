@@ -1,4 +1,4 @@
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcRenderer } from "electron";
 import type {
   APIRecord,
   APISchema,
