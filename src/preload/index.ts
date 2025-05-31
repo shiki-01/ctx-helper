@@ -23,6 +23,29 @@ class APIManager {
   }
 
   /**
+   * API のハンドラを一括登録する
+   * @param apiObj API のハンドラ群
+   * @param parentKey 親のキー
+   */
+  registerAPIHandlers<T>(apiObj: APIRecord<T>, parentKey = ''): void {
+    for (const key in apiObj) {
+      const fullKey = parentKey ? `${parentKey}.${key}` : key
+      if (typeof apiObj[key] === 'function') {
+        this.handlers[fullKey] = apiObj[key] as (...args: unknown[]) => Promise<APISchema>
+        ipcMain.handle(`invoke-api:${fullKey}`, async (event, ...args) => {
+          try {
+            return await (apiObj[key] as (...args: unknown[]) => Promise<T>)(event.sender, ...args)
+          } catch (err) {
+            return logStatus({ code: 500, message: 'API の呼び出しに失敗しました' }, null, err)
+          }
+        })
+      } else {
+        this.registerAPIHandlers(apiObj[key] as APIRecord<T>, fullKey)
+      }
+    }
+  }
+
+  /**
    * リスナーを登録する
    * @param key リスナーのキー
    * @param listener リスナー関数
@@ -36,6 +59,29 @@ class APIManager {
         console.error(`[ERROR] IPC Listener error: ${key}`, err)
       }
     })
+  }
+
+  /**
+   * API のリスナーを一括登録する
+   * @param apiObj API のリスナー群
+   * @param parentKey 親のキー
+   */
+  registerAPIListeners<T>(apiObj: APIRecord<T>, parentKey = ''): void {
+    for (const key in apiObj) {
+      const fullKey = parentKey ? `${parentKey}.${key}` : key
+      if (typeof apiObj[key] === 'function') {
+        this.listeners[fullKey] = apiObj[key] as (...args: unknown[]) => Promise<APISchema>
+        ipcMain.on(`on-api:${fullKey}`, (_event, ...args) => {
+          try {
+            (apiObj[key] as (...args: unknown[]) => void)(...args)
+          } catch (err) {
+            console.error(`[ERROR] IPC Listener error: ${fullKey}`, err)
+          }
+        })
+      } else {
+        this.registerAPIListeners(apiObj[key] as APIRecord<T>, fullKey)
+      }
+    }
   }
 
   /**
