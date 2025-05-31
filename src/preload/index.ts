@@ -74,3 +74,5 @@ const createAPIEmitter = <T extends APIRecord<any>>(
 
   return createRecursive(apiObj, parentKey);
 };
+
+export { createAPIInvoker, createAPIEmitter };
