@@ -39,31 +39,40 @@ class APIManager {
    * @param apiObj API のハンドラ群
    * @param parentKey 親のキー
    */
-  registerAPIHandlers<T>(apiObj: APIRecord<T>, parentKey = ""): void {
-    for (const key in apiObj) {
-      const fullKey = parentKey ? `${parentKey}.${key}` : key;
-      if (typeof apiObj[key] === "function") {
-        this.handlers[fullKey] = apiObj[key] as (
-          ...args: unknown[]
-        ) => Promise<APISchema>;
-        ipcMain.handle(`invoke-api:${fullKey}`, async (event, ...args) => {
-          try {
-            return await (apiObj[key] as (...args: unknown[]) => Promise<T>)(
-              event.sender,
-              ...args
-            );
-          } catch (err) {
-            return logStatus(
-              { code: 500, message: "API の呼び出しに失敗しました" },
-              null,
-              err
-            );
-          }
-        });
-      } else {
-        this.registerAPIHandlers(apiObj[key] as APIRecord<T>, fullKey);
+  registerAPIHandlers<T extends APIRecord<APISchema<any>>>(
+    apiObj: T,
+    parentKey = ""
+  ): void {
+    const registerRecursive = (
+      obj: APIRecord<APISchema<any>>,
+      prefix = ""
+    ): void => {
+      for (const key in obj) {
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        if (typeof obj[key] === "function") {
+          this.handlers[fullKey] = obj[key] as (
+            ...args: unknown[]
+          ) => Promise<APISchema<any>>;
+          ipcMain.handle(`invoke-api:${fullKey}`, async (event, ...args) => {
+            try {
+              return await (
+                obj[key] as (...args: unknown[]) => Promise<APISchema<any>>
+              )(event.sender, ...args);
+            } catch (err) {
+              return logStatus(
+                { code: 500, message: "API の呼び出しに失敗しました" },
+                null,
+                err
+              );
+            }
+          });
+        } else {
+          registerRecursive(obj[key] as APIRecord<APISchema<any>>, fullKey);
+        }
       }
-    }
+    };
+
+    registerRecursive(apiObj, parentKey);
   }
 
   /**
@@ -90,24 +99,36 @@ class APIManager {
    * @param apiObj API のリスナー群
    * @param parentKey 親のキー
    */
-  registerAPIListeners<T>(apiObj: APIRecord<T>, parentKey = ""): void {
-    for (const key in apiObj) {
-      const fullKey = parentKey ? `${parentKey}.${key}` : key;
-      if (typeof apiObj[key] === "function") {
-        this.listeners[fullKey] = apiObj[key] as (
-          ...args: unknown[]
-        ) => Promise<APISchema>;
-        ipcMain.on(`on-api:${fullKey}`, (_event, ...args) => {
-          try {
-            (apiObj[key] as (...args: unknown[]) => void)(...args);
-          } catch (err) {
-            console.error(`[ERROR] IPC Listener error: ${fullKey}`, err);
-          }
-        });
-      } else {
-        this.registerAPIListeners(apiObj[key] as APIRecord<T>, fullKey);
+  registerAPIListeners<T extends APIRecord<any>>(
+    apiObj: T,
+    parentKey = ""
+  ): void {
+    const registerRecursive = (obj: APIRecord<any>, prefix = ""): void => {
+      for (const key in obj) {
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        if (typeof obj[key] === "function") {
+          this.listeners[fullKey] = obj[key] as (...args: unknown[]) => any;
+          ipcMain.on(`on-api:${fullKey}`, (_event, ...args) => {
+            try {
+              (obj[key] as (...args: unknown[]) => void)(...args);
+            } catch (err) {
+              logStatus(
+                {
+                  code: 400,
+                  message: `[ERROR] IPC Listener error: ${fullKey}`,
+                },
+                null,
+                err
+              );
+            }
+          });
+        } else {
+          registerRecursive(obj[key] as APIRecord<any>, fullKey);
+        }
       }
-    }
+    };
+
+    registerRecursive(apiObj, parentKey);
   }
 
   /**
@@ -150,22 +171,37 @@ class APIManager {
 
   /**
    * API のエミッターを作成する
+   * @param apiObj API のハンドラ群（省略時は登録済みリスナーを使用）
+   * @param parentKey 親のキー
    * @returns API のエミッター
    */
-  createAPIEmitter<T>(apiObj?: APIRecord<T>): RecursiveListener<T> {
-    const apiEmitter: {
-      [key: string]: RecursiveListener<T> | ((...args: unknown[]) => void);
-    } = {};
+  createAPIEmitter<T extends APIRecord<any>>(
+    apiObj?: T,
+    parentKey = ""
+  ): RecursiveListener<T> {
+    const listeners = apiObj || (this.listeners as T);
 
-    const listeners = apiObj || this.listeners;
+    const createRecursive = (
+      obj: APIRecord<any>,
+      prefix = ""
+    ): RecursiveListener<T> => {
+      const result: Record<string, any> = {};
 
-    for (const key in listeners) {
-      apiEmitter[key] = (...args: unknown[]): void => {
-        ipcRenderer.send(`on-api:${key}`, ...args);
-      };
-    }
+      for (const key in obj) {
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        if (typeof obj[key] === "function") {
+          result[key] = (...args: unknown[]): void => {
+            ipcRenderer.send(`on-api:${fullKey}`, ...args);
+          };
+        } else {
+          result[key] = createRecursive(obj[key] as APIRecord<any>, fullKey);
+        }
+      }
 
-    return apiEmitter as RecursiveListener<T>;
+      return result as RecursiveListener<T>;
+    };
+
+    return createRecursive(listeners, parentKey);
   }
 }
 
