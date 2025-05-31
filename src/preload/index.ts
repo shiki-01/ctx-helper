@@ -88,10 +88,12 @@ class APIManager {
    * API のインボーカを作成する
    * @returns API のインボーカ
    */
-  createAPIInvoker<T>(): RecursiveAPI<T> {
+  createAPIInvoker<T>(apiObj?: APIRecord<T>): RecursiveAPI<T> {
     const apiRenderer: { [key: string]: RecursiveAPI<T> | ((...args: unknown[]) => void) } = {}
 
-    for (const key in this.handlers) {
+    const handlers = apiObj || this.handlers
+
+    for (const key in handlers) {
       apiRenderer[key] = async (...args: unknown[]): Promise<APISchema> => {
         return ipcRenderer.invoke(`invoke-api:${key}`, ...args)
       }
@@ -104,10 +106,12 @@ class APIManager {
    * API のエミッターを作成する
    * @returns API のエミッター
    */
-  createAPIEmitter<T>(): RecursiveListener<T> {
+  createAPIEmitter<T>(apiObj?: APIRecord<T>): RecursiveListener<T> {
     const apiEmitter: { [key: string]: RecursiveListener<T> | ((...args: unknown[]) => void) } = {}
 
-    for (const key in this.listeners) {
+    const listeners = apiObj || this.listeners
+
+    for (const key in listeners) {
       apiEmitter[key] = (...args: unknown[]): void => {
         ipcRenderer.send(`on-api:${key}`, ...args)
       }
