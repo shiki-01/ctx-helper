@@ -4,7 +4,7 @@ import { WebContents } from "electron"
  * API のレスポンスのスキーマ
  * @template T API のレスポンスのデータの型
  */
-type APIRecord<T> = {
+type APIRecord<T = APISchema<any>> = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: ((...args: any[]) => Promise<T>) | APIRecord<T>
 }
@@ -28,8 +28,8 @@ type AsyncFunction = (...args: any[]) => Promise<any>
 
 type RecursiveAPI<T> = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [K in keyof T]: T[K] extends (R: WebContents, ...args: infer P) => infer R
-    ? (...args: P) => R
+    [K in keyof T]: T[K] extends ((R: WebContents, ...args: infer P) => Promise<any>)
+    ? (...args: P) => Promise<APISchema<any>>
     : RecursiveAPI<T[K]>
 }
 
