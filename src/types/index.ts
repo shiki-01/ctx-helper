@@ -1,4 +1,4 @@
-import type { WebContents } from "electron"
+import { WebContents } from "electron"
 
 /**
  * API のレスポンスのスキーマ
