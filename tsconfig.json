@@ -20,6 +20,8 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
 
+    "rootDir": "src",
+    "outDir": "dist",
     "esModuleInterop": true,
     "declaration": true
   },

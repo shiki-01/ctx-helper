@@ -1,6 +1,6 @@
 {
   "name": "ctx-helper",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "A helper library for managing Electron context isolation and IPC communication.",
   "module": "index.ts",
   "type": "module",
@@ -40,9 +40,8 @@
     "url": "https://shiki-01.com"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir=dist --target=node --format=esm --minify --sourcemap",
-    "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist",
-    "build:all": "bun run build && bun run build:types",
+    "build": "tsc && bun build src/index.ts --outdir=dist --target=node --format=esm --minify --sourcemap",
+  "build:all": "tsc && bun run build",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch"
   },
