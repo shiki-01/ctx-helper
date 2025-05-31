@@ -1,6 +1,6 @@
 {
   "name": "ctx-helper",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A helper library for managing Electron context isolation and IPC communication.",
   "module": "index.ts",
   "type": "module",
@@ -34,7 +34,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@shiki-01/logstatus": "^0.0.1",
+    "@shiki-01/logstatus": "^0.0.2",
     "electron": "^35.1.5"
   }
 }
