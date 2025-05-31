@@ -8,9 +8,6 @@ import type {
 import { logStatus } from "@shiki-01/logstatus";
 
 class APIManager {
-  private handlers: APIRecord<APISchema<any>> = {};
-  private listeners: APIRecord<APISchema<any>> = {};
-
   /**
    * ハンドラを登録する
    * @param key ハンドラのキー
@@ -20,7 +17,6 @@ class APIManager {
     key: string,
     handler: (...args: unknown[]) => Promise<T>
   ): void {
-    this.handlers[key] = handler;
     ipcMain.handle(`invoke-api:${key}`, async (event, ...args) => {
       try {
         return await handler(event.sender, ...args);
@@ -50,9 +46,6 @@ class APIManager {
       for (const key in obj) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
         if (typeof obj[key] === "function") {
-          this.handlers[fullKey] = obj[key] as (
-            ...args: unknown[]
-          ) => Promise<APISchema<any>>;
           ipcMain.handle(`invoke-api:${fullKey}`, async (event, ...args) => {
             try {
               return await (
@@ -84,7 +77,6 @@ class APIManager {
     key: string,
     listener: (...args: unknown[]) => Promise<T>
   ): void {
-    this.listeners[key] = listener;
     ipcMain.on(`on-api:${key}`, (_event, ...args) => {
       try {
         listener(...args);
@@ -107,7 +99,6 @@ class APIManager {
       for (const key in obj) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
         if (typeof obj[key] === "function") {
-          this.listeners[fullKey] = obj[key] as (...args: unknown[]) => any;
           ipcMain.on(`on-api:${fullKey}`, (_event, ...args) => {
             try {
               (obj[key] as (...args: unknown[]) => void)(...args);
@@ -138,11 +129,9 @@ class APIManager {
    * @returns API のインボーカ
    */
   createAPIInvoker<T extends APIRecord<APISchema<any>>>(
-    apiObj?: T,
+    apiObj: T,
     parentKey = ""
   ): RecursiveAPI<T> {
-    const handlers = apiObj || (this.handlers as T);
-
     const createRecursive = (
       obj: APIRecord<APISchema<any>>,
       prefix = ""
@@ -166,7 +155,7 @@ class APIManager {
       return result as RecursiveAPI<T>;
     };
 
-    return createRecursive(handlers, parentKey);
+    return createRecursive(apiObj, parentKey);
   }
 
   /**
@@ -176,11 +165,9 @@ class APIManager {
    * @returns API のエミッター
    */
   createAPIEmitter<T extends APIRecord<any>>(
-    apiObj?: T,
+    apiObj: T,
     parentKey = ""
   ): RecursiveListener<T> {
-    const listeners = apiObj || (this.listeners as T);
-
     const createRecursive = (
       obj: APIRecord<any>,
       prefix = ""
@@ -201,7 +188,7 @@ class APIManager {
       return result as RecursiveListener<T>;
     };
 
-    return createRecursive(listeners, parentKey);
+    return createRecursive(apiObj, parentKey);
   }
 }
 
