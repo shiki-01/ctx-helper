@@ -1,6 +1,6 @@
 {
   "name": "ctx-helper",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "A helper library for managing Electron context isolation and IPC communication.",
   "module": "index.ts",
   "type": "module",
